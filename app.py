@@ -69,8 +69,28 @@ if selected == "Stock Info":
         info_value = "Information is not available"
     st.write(info_value)
     st.write("---")
-    st.subheader("Stock Price Line Chart")
-    st.line_chart(stock_df['Close'])
+    stock_df2 = stock_data.history(period="1d", interval="5m")
+    st.subheader("Stock Price Candlestick Chart (5-minute intervals)")
+
+    fig = go.Figure(data=[go.Candlestick(
+        x=stock_df2.index,
+        open=stock_df2['Open'],
+        high=stock_df2['High'],
+        low=stock_df2['Low'],
+        close=stock_df2['Close'],
+        name='5-minute intervals'
+    )])
+
+    fig.update_layout(
+        width=1000,
+        height=600,
+        xaxis_title='Time',
+        yaxis_title='Price',
+        title=f'{ticker} Stock Price (5-minute intervals)',
+        xaxis_rangeslider_visible=False
+    )
+
+    st.plotly_chart(fig)
     st.subheader("Stock Data")
     st.write("---")
     st.write(stock_df)
