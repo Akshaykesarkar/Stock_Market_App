@@ -25,7 +25,7 @@ st.title("Real-Time Stock Prediction App")
 col1, col2 = st.columns([2, 2])
 with col1:
     
-    st.write("**Stock Market Analysis and Prediction Tool**")
+    st.subheader("Stock Market Analysis and Prediction Tool")
     st.write("""
     This app provides tools for analyzing and predicting stock market prices. 
     It leverages machine learning models like LSTM and GRU for making predictions and includes various technical indicators to assist in stock analysis. The app aims to help users make informed decisions by providing comprehensive insights into stock market trends.
@@ -34,12 +34,6 @@ with col1:
 
 with col2:
     st_lottie(lottie_animation, height=400, key="stock_animation")
-
-
-
-
-# Create a text input for the user to enter the stock ticker
-
 
 # Fetch the stock data
 stock_data = yf.Ticker(ticker)
