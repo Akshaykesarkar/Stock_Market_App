@@ -62,7 +62,7 @@ if selected == "Stock Info":
         info_value = "Information is not available"
     st.write(info_value)
     st.write("---")
-    stock_df2 = stock_data.history(period="1d", interval="5m")
+    stock_df2 = stock_data.history(period="7d", interval="5m")
     st.subheader("Stock Price Candlestick Chart (5-minute intervals)")
 
     fig = go.Figure(data=[go.Candlestick(
