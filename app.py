@@ -27,7 +27,6 @@ st.set_page_config(layout="wide")
 with open("stock.json", "r", encoding="utf-8") as f:
     lottie_animation = json.load(f)
 
-
 col1, col2 = st.columns([2, 2])
 
 with col1:
