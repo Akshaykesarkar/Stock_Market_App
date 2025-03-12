@@ -1,0 +1,10 @@
+yfinance
+streamlit
+numpy
+pandas
+tensorflow
+scikit-learn
+plotly
+streamlit-option-menu
+streamlit-lottie
+requests
