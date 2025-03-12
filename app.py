@@ -20,11 +20,11 @@ st.set_page_config(layout="wide")
 with open("stock.json", "r", encoding="utf-8") as f:
     lottie_animation = json.load(f)
 
+st.title("Real-Time Stock Prediction App")
 
 col1, col2 = st.columns([2, 2])
-
 with col1:
-    st.title("Stock Market App")
+    
     st.subheader("Stock Market Analysis and Prediction Tool")
     st.write("""
     This app provides tools for analyzing and predicting stock market prices. 
