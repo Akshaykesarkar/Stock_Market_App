@@ -12,9 +12,15 @@ import requests
 import json
 
 
-model = load_model('lstm_model.h5')
-gru_model = load_model('gru_model.keras')
+try:
+    model = load_model('lstm_model.h5')
+except Exception as e:
+    st.error(f"Error loading LSTM model: {e}")
 
+try:
+    gru_model = load_model('gru_model.keras')
+except Exception as e:
+    st.error(f"Error loading GRU model: {e}")
 
 st.set_page_config(layout="wide")
 # Load Lottie Animation from local file
@@ -131,7 +137,7 @@ if selected == "LSTM & GRU":
         st.write("No predictions to display.")
         
     # Predict future prices for the next 30 days
-    future_steps = 30
+    future_steps = st.number_input("Enter number of future steps to predict", min_value=1, max_value=30, value=2)
     last_data = scaled_data[-time_step:]
     future_predictions_lstm = []
     future_predictions_gru = []
