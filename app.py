@@ -12,8 +12,15 @@ import requests
 import json
 import plotly.graph_objects as go
 
-model = load_model('lstm_model.h5')
-gru_model = load_model('gru_model.keras')
+try:
+    model = load_model('lstm_model.h5')
+except Exception as e:
+    st.error(f"Error loading LSTM model: {e}")
+
+try:
+    gru_model = load_model('gru_model.keras')
+except Exception as e:
+    st.error(f"Error loading GRU model: {e}")
 
 st.set_page_config(layout="wide")
 # Load Lottie Animation from local file
