@@ -40,7 +40,7 @@ with col1:
     ticker = st.text_input("Enter Stock Ticker", "AAPL")
 
 with col2:
-    st_lottie(lottie_animation, height=300, key="stock_animation")
+    st_lottie(lottie_animation, height=320, key="stock_animation")
 
 
 # Fetch the stock data
