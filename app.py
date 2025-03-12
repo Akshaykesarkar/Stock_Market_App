@@ -10,7 +10,7 @@ from streamlit_option_menu import option_menu
 from streamlit_lottie import st_lottie
 import requests
 import json
-
+import plotly.graph_objects as go
 
 try:
     model = load_model('lstm_model.h5')
@@ -121,8 +121,6 @@ gru_predictions = gru_model.predict(X)
 gru_predictions = scaler.inverse_transform(gru_predictions)
 
 # Display the predictions
-import plotly.graph_objects as go
-
 if selected == "LSTM & GRU":
     if lstm_predictions.size > 0 and gru_predictions.size > 0:
         pred_df = pd.DataFrame({
