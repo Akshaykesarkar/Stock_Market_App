@@ -12,15 +12,9 @@ import requests
 import json
 
 
-try:
-    model = load_model('lstm_model.h5')
-except Exception as e:
-    st.error(f"Error loading LSTM model: {e}")
+model = load_model('lstm_model.h5')
+gru_model = load_model('gru_model.keras')
 
-try:
-    gru_model = load_model('gru_model.keras')
-except Exception as e:
-    st.error(f"Error loading GRU model: {e}")
 
 st.set_page_config(layout="wide")
 # Load Lottie Animation from local file
