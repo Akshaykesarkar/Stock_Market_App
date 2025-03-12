@@ -12,19 +12,26 @@ import requests
 import json
 
 
-model = load_model('lstm_model.h5')
-gru_model = load_model('gru_model.keras')
+try:
+    model = load_model('lstm_model.h5')
+except Exception as e:
+    st.error(f"Error loading LSTM model: {e}")
+
+try:
+    gru_model = load_model('gru_model.keras')
+except Exception as e:
+    st.error(f"Error loading GRU model: {e}")
 
 st.set_page_config(layout="wide")
 # Load Lottie Animation from local file
 with open("stock.json", "r", encoding="utf-8") as f:
     lottie_animation = json.load(f)
 
-st.title("Real-Time Stock Prediction App")
 
 col1, col2 = st.columns([2, 2])
+
 with col1:
-    
+    st.title("Stock Market App")
     st.subheader("Stock Market Analysis and Prediction Tool")
     st.write("""
     This app provides tools for analyzing and predicting stock market prices. 
@@ -34,6 +41,7 @@ with col1:
 
 with col2:
     st_lottie(lottie_animation, height=400, key="stock_animation")
+
 
 # Fetch the stock data
 stock_data = yf.Ticker(ticker)
@@ -53,7 +61,13 @@ selected = option_menu(
 if selected == "Stock Info":
     st.subheader(f"Stock data for {ticker}")
     st.write(stock_data.info["longBusinessSummary"])
-    st.write(stock_data.info["sector"])
+    info_options = ["sector", "industry", "fullTimeEmployees", "website", "marketCap", "shortName", "longName", "exchange", "quoteType", "currency"]
+    selected_info = st.selectbox("Select Information to Display", info_options)
+    if stock_data.info and selected_info in stock_data.info:
+        info_value = stock_data.info.get(selected_info, "Information is not available")
+    else:
+        info_value = "Information is not available"
+    st.write(info_value)
     st.write("---")
     st.subheader("Stock Price Line Chart")
     st.line_chart(stock_df['Close'])
@@ -166,48 +180,66 @@ if selected == "Indicators":
     def moving_average(data, window_size):
         return data.rolling(window=window_size).mean()
 
+    def rsi(data, window=14):
+        delta = data.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+        rs = gain / loss
+        return 100 - (100 / (1 + rs))
+
+    def stochastic_oscillator(data, window=14):
+        low_min = data['Low'].rolling(window=window).min()
+        high_max = data['High'].rolling(window=window).max()
+        return 100 * (data['Close'] - low_min) / (high_max - low_min)
+
+    def bollinger_bands(data, window=20):
+        sma = data.rolling(window=window).mean()
+        std = data.rolling(window=window).std()
+        upper_band = sma + (std * 2)
+        lower_band = sma - (std * 2)
+        return upper_band, lower_band
+
     window_size = 20
     stock_df['SMA'] = moving_average(stock_df['Close'], window_size)
+    stock_df['RSI'] = rsi(stock_df['Close'])
+    stock_df['Stochastic'] = stochastic_oscillator(stock_df)
+    stock_df['Upper Band'], stock_df['Lower Band'] = bollinger_bands(stock_df['Close'])
 
     stock_df['VWAP'] = (stock_df['Close'] * stock_df['Volume']).cumsum() / stock_df['Volume'].cumsum()
-
     stock_df['OBV'] = (np.sign(stock_df['Close'].diff()) * stock_df['Volume']).fillna(0).cumsum()
-
     exp1 = stock_df['Close'].ewm(span=12, adjust=False).mean()
     exp2 = stock_df['Close'].ewm(span=26, adjust=False).mean()
     stock_df['MACD'] = exp1 - exp2
-
     stock_df['High-Low'] = stock_df['High'] - stock_df['Low']
     stock_df['ChaikinVolatility'] = stock_df['High-Low'].ewm(span=10).mean()
 
-    indicators = ['Close', 'SMA', 'VWAP', 'OBV', 'MACD', 'ChaikinVolatility']
-    stock_df['Average'] = stock_df[indicators].mean(axis=1)
+    indicators = ['Close', 'SMA', 'RSI', 'Stochastic', 'Upper Band', 'Lower Band', 'VWAP', 'OBV', 'MACD', 'ChaikinVolatility']
+    selected_indicators = st.multiselect("Select up to 4 indicators", indicators, default=['SMA', 'RSI', 'Stochastic', 'Upper Band'])
 
-    actual_df = stock_df.reset_index()
+    if len(selected_indicators) > 4:
+        st.error("Please select up to 4 indicators only.")
+    else:
+        actual_df = stock_df.reset_index()
 
-    fig = go.Figure()
-    fig.add_trace(go.Candlestick(
-        x=actual_df['Date'],
-        open=stock_df['Open'],
-        high=stock_df['High'],
-        low=stock_df['Low'],
-        close=stock_df['Close'],
-        name='Actual Prices'
-    ))
+        fig = go.Figure()
+        fig.add_trace(go.Candlestick(
+            x=actual_df['Date'],
+            open=stock_df['Open'],
+            high=stock_df['High'],
+            low=stock_df['Low'],
+            close=stock_df['Close'],
+            name='Actual Prices'
+        ))
 
-    fig.add_traces([go.Scatter(x=actual_df['Date'], y=stock_df['SMA'], mode='lines', name='SMA'),
-                    go.Scatter(x=actual_df['Date'], y=stock_df['VWAP'], mode='lines', name='VWAP'),
-                    go.Scatter(x=actual_df['Date'], y=stock_df['OBV'], mode='lines', name='OBV'),
-                    go.Scatter(x=actual_df['Date'], y=stock_df['MACD'], mode='lines', name='MACD'),
-                    go.Scatter(x=actual_df['Date'], y=stock_df['ChaikinVolatility'], mode='lines', name='Chaikin Volatility'),
-                    go.Scatter(x=actual_df['Date'], y=stock_df['Average'], mode='lines', name='Average')])
+        for indicator in selected_indicators:
+            fig.add_trace(go.Scatter(x=actual_df['Date'], y=stock_df[indicator], mode='lines', name=indicator))
 
-    fig.update_layout(
-        width=1000,
-        height=600,
-        xaxis_title='Date',
-        yaxis_title='Price',
-        title='Stock Prices with Indicators'
-    )
+        fig.update_layout(
+            width=1000,
+            height=600,
+            xaxis_title='Date',
+            yaxis_title='Price',
+            title='Stock Prices with Indicators'
+        )
 
-    st.plotly_chart(fig)
+        st.plotly_chart(fig)
