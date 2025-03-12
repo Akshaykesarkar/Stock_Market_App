@@ -45,7 +45,7 @@ with col2:
 # Fetch the stock data
 stock_data = yf.Ticker(ticker)
 end_date = datetime.today().strftime('%Y-%m-%d')
-stock_df = stock_data.history(period="1d", start="2024-1-1", end=end_date)
+stock_df = stock_data.history(period="1d", start="2024-1-1", end=end_date, interval="5m")
 
 selected = option_menu(
     menu_title=None,  # No menu title
