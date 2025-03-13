@@ -2,18 +2,18 @@ import yfinance as yf
 import streamlit as st
 import numpy as np
 import pandas as pd
-from tensorflow.keras.models import load_model
+import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
-import time
 from datetime import datetime
 from streamlit_option_menu import option_menu
-from streamlit_lottie import st_lottie
-import requests
 import json
 import plotly.graph_objects as go
+from streamlit_lottie import st_lottie  # Import st_lottie
+from tensorflow.keras.models import load_model  # Import load_model
+from tensorflow.keras.utils import register_keras_serializable  # Import register_keras_serializable
 
 try:
-    model = load_model('lstm_model (1).h5')
+    model = load_model('lstm_model.h5')
 except Exception as e:
     st.error(f"Error loading LSTM model: {e}")
 
@@ -22,7 +22,15 @@ try:
 except Exception as e:
     st.error(f"Error loading GRU model: {e}")
 
-st.set_page_config(layout="wide")
+@register_keras_serializable()
+def mse(y_true, y_pred):
+    return tf.reduce_mean(tf.square(y_true - y_pred))
+
+try:
+    nbeats_model = load_model('nbeats_model.h5', custom_objects={'mse': mse})
+except Exception as e:
+    st.error(f"Error loading N-BEATS model: {e}")
+
 # Load Lottie Animation from local file
 with open("stock.json", "r", encoding="utf-8") as f:
     lottie_animation = json.load(f)
@@ -41,7 +49,6 @@ with col1:
 with col2:
     st_lottie(lottie_animation, height=320, key="stock_animation")
 
-
 # Fetch the stock data
 stock_data = yf.Ticker(ticker)
 end_date = datetime.today().strftime('%Y-%m-%d')
@@ -49,7 +56,7 @@ stock_df = stock_data.history(period="1d", start="2024-1-1", end=end_date)
 
 selected = option_menu(
     menu_title=None,  # No menu title
-    options=["Stock Info", "LSTM & GRU", "Indicators"],
+    options=["Stock Info", "Algorithms", "Indicators"],
     icons=["bar-chart", "code", "activity"],
     menu_icon="cast",
     default_index=0,
@@ -94,7 +101,7 @@ if selected == "Stock Info":
     st.write("---")
     st.write(stock_df)
 
-# Preprocess the data for the LSTM model
+# Preprocess the data for the models
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled_data = scaler.fit_transform(stock_df['Close'].values.reshape(-1, 1))
 
@@ -119,12 +126,18 @@ lstm_predictions = scaler.inverse_transform(lstm_predictions)
 gru_predictions = gru_model.predict(X)
 gru_predictions = scaler.inverse_transform(gru_predictions)
 
+# Make predictions with N-BEATS model
+X_nbeats = X.reshape(X.shape[0], time_step)
+nbeats_predictions = nbeats_model.predict(X_nbeats)
+nbeats_predictions = scaler.inverse_transform(nbeats_predictions)
+
 # Display the predictions
-if selected == "LSTM & GRU":
-    if lstm_predictions.size > 0 and gru_predictions.size > 0:
+if selected == "Algorithms":
+    if lstm_predictions.size > 0 and gru_predictions.size > 0 and nbeats_predictions.size > 0:
         pred_df = pd.DataFrame({
             'LSTM Predicted Close': lstm_predictions.flatten(),
-            'GRU Predicted Close': gru_predictions.flatten()
+            'GRU Predicted Close': gru_predictions.flatten(),
+            'N-BEATS Predicted Close': nbeats_predictions.flatten()
         })
         actual_df = stock_df.reset_index()
         actual_df['Date'] = pd.to_datetime(actual_df['Date'])
@@ -140,6 +153,7 @@ if selected == "LSTM & GRU":
         ))
         fig.add_trace(go.Scatter(x=actual_df['Date'], y=pred_df['LSTM Predicted Close'], mode='lines', name='LSTM Predicted Close'))
         fig.add_trace(go.Scatter(x=actual_df['Date'], y=pred_df['GRU Predicted Close'], mode='lines', name='GRU Predicted Close'))
+        fig.add_trace(go.Scatter(x=actual_df['Date'], y=pred_df['N-BEATS Predicted Close'], mode='lines', name='N-BEATS Predicted Close'))
         
         fig.update_layout(
             width=1000,  
@@ -158,30 +172,36 @@ if selected == "LSTM & GRU":
     last_data = scaled_data[-time_step:]
     future_predictions_lstm = []
     future_predictions_gru = []
+    future_predictions_nbeats = []
 
     for _ in range(future_steps):
         lstm_pred = model.predict(last_data.reshape(1, time_step, 1))
         gru_pred = gru_model.predict(last_data.reshape(1, time_step, 1))
+        nbeats_pred = nbeats_model.predict(last_data.reshape(1, time_step))
 
         future_predictions_lstm.append(lstm_pred[0, 0])
         future_predictions_gru.append(gru_pred[0, 0])
+        future_predictions_nbeats.append(nbeats_pred[0, 0])
 
         last_data = np.append(last_data[1:], lstm_pred[0, 0].reshape(-1, 1), axis=0)
 
     future_predictions_lstm = scaler.inverse_transform(np.array(future_predictions_lstm).reshape(-1, 1))
     future_predictions_gru = scaler.inverse_transform(np.array(future_predictions_gru).reshape(-1, 1))
+    future_predictions_nbeats = scaler.inverse_transform(np.array(future_predictions_nbeats).reshape(-1, 1))
 
     future_dates = pd.date_range(start=stock_df.index[-1], periods=future_steps + 1, inclusive='right')
 
     future_df = pd.DataFrame({
         'Date': future_dates,
         'LSTM Future Prediction': future_predictions_lstm.flatten(),
-        'GRU Future Prediction': future_predictions_gru.flatten()
+        'GRU Future Prediction': future_predictions_gru.flatten(),
+        'N-BEATS Future Prediction': future_predictions_nbeats.flatten()
     })
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=future_df['Date'], y=future_df['LSTM Future Prediction'], mode='lines', name='LSTM Future Prediction'))
     fig.add_trace(go.Scatter(x=future_df['Date'], y=future_df['GRU Future Prediction'], mode='lines', name='GRU Future Prediction'))
+    fig.add_trace(go.Scatter(x=future_df['Date'], y=future_df['N-BEATS Future Prediction'], mode='lines', name='N-BEATS Future Prediction'))
 
     fig.update_layout(
         width=1000,
