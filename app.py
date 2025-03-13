@@ -12,6 +12,8 @@ from streamlit_lottie import st_lottie  # Import st_lottie
 from tensorflow.keras.models import load_model  # Import load_model
 from tensorflow.keras.utils import register_keras_serializable  # Import register_keras_serializable
 
+st.set_page_config(layout="wide")
+
 try:
     model = load_model('lstm_model.h5')
 except Exception as e:
