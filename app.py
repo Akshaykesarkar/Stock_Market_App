@@ -170,7 +170,7 @@ if selected == "Algorithms":
         st.write("No predictions to display.")
         
     # Predict future prices for the next 30 days
-    future_steps = st.number_input("Enter number of future steps to predict", min_value=1, max_value=90, value=2)
+    future_steps = st.number_input("Enter number of future steps to predict", min_value=1, max_value=20, value=2)
     last_data = scaled_data[-time_step:]
     future_predictions_lstm = []
     future_predictions_gru = []
