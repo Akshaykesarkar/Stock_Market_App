@@ -68,7 +68,7 @@ selected = option_menu(
 # Display the stock data
 if selected == "Stock Info":
     st.subheader(f"Stock data for {ticker}")
-    st.write(stock_data.info["longBusinessSummary"])
+    st.write(stock_data.info.get("longBusinessSummary", "Long business summary is not available"))
     info_options = ["sector", "industry", "fullTimeEmployees", "website", "marketCap", "shortName", "longName", "exchange", "quoteType", "currency"]
     selected_info = st.selectbox("Select Information to Display", info_options)
     if stock_data.info and selected_info in stock_data.info:
