@@ -50,7 +50,7 @@ stock_df = stock_data.history(period="1d", start="2024-1-1", end=end_date)
 selected = option_menu(
     menu_title=None,  # No menu title
     options=["Stock Info", "LSTM & GRU", "Indicators"],
-    icons=["bar-chart", "line-chart", "activity"],
+    icons=["bar-chart", "code", "activity"],
     menu_icon="cast",
     default_index=0,
     orientation="horizontal"
