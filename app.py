@@ -13,7 +13,7 @@ import json
 import plotly.graph_objects as go
 
 try:
-    model = load_model('lstm_model.h5')
+    model = load_model('lstm_model (1).h5')
 except Exception as e:
     st.error(f"Error loading LSTM model: {e}")
 
